@@ -1,0 +1,97 @@
+🧩 Part A — Grammar Analysis
+
+Goal: Analyse the MiniLisp grammar and prove it’s LL(1).
+
+✅ A.1 LL(1) Verification
+
+ Write down the full grammar (with app-tail expansion).
+
+ Compute FIRST sets for all non-terminals (program, expr, paren-expr, app-tail).
+
+ Compute FOLLOW sets for the same non-terminals.
+
+ Construct the LL(1) parse table M[A,a].
+
+ Check that each table cell contains one unique production (no conflicts).
+
+ Show this table in your PDF.
+
+✅ A.2 Conflict Resolution
+
+ Explain why the rule <expr> <expr>* doesn’t cause ambiguity.
+
+ Describe how lookahead determines which production to use.
+
+ Explain what the parser does when the next token is +, ×, λ, etc.
+
+✅ A.3 Grammar Properties
+
+ Discuss why the grammar is unambiguous.
+
+ Explain how left-factoring makes it LL(1).
+
+ Show what would happen without left-factoring (e.g. duplicate ( starts).
+
+💻 Part B — Implementation
+
+Goal: Build a working LL(1) parser in Python (or your chosen language).
+
+✅ B.1 Lexer (15 pts)
+
+ Implement a lexer that outputs tokens:
+NUMBER, IDENT, LPAREN, RPAREN, PLUS, TIMES, EQUAL, MINUS, QMARK, LAMBDA, DEF, EOF.
+
+ Handle whitespace and illegal characters gracefully.
+
+ Return a list of token objects with type, lexeme, and position.
+
+✅ B.2 Parser (20 pts)
+
+ Hard-code your parse table (dict of (non-terminal, terminal) → production).
+
+ Implement the table-driven LL(1) algorithm using a stack:
+
+Initialise stack = [$, program].
+
+Pop top, compare with lookahead, and expand via table.
+
+Push RHS in reverse order.
+
+Match terminals; accept on $ + EOF.
+
+ Detect and report “unexpected token” errors.
+
+✅ B.3 Parse Tree (10 pts)
+
+ Build simple list-based trees such as ['PLUS', 2, 'x'].
+
+ Implement semantic actions (or post-expansion steps) to construct nodes:
+PLUS, MULT, EQUAL, MINUS, IF, LAMBDA, DEF, CALL.
+
+ Return or print the tree as JSON.
+
+🧪 Part C — Testing & Validation
+
+Goal: Verify correctness and produce clean outputs.
+
+✅ C.1 Test Cases (10 pts)
+
+ Create test inputs for:
+
+Literals: 42, x
+
+Binary ops: (+ 2 3), (× x 5)
+
+Nesting: (+ (× 2 3) 4)
+
+Conditional: (? (= x 0) 1 0)
+
+Functions: (λ x x), (≜ y 10 y), ((λ x (+ x 1)) 5)
+
+ Generate matching JSON output files.
+
+✅ C.2 Error Handling (5 pts)
+
+ Handle missing ), unmatched ), and wrong arity ((+ 2 3 4)).
+
+ Print clear messages with position info. 

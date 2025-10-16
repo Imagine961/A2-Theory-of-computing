@@ -2,21 +2,19 @@
 
 Goal: Analyse the MiniLisp grammar and prove it’s LL(1).
 
-✅ A.1 LL(1) Verification
+A.1 LL(1) Verification
 
- Write down the full grammar (with app-tail expansion).
+ Compute FIRST sets for all non-terminals (program, expr, paren-expr). ✅
 
- Compute FIRST sets for all non-terminals (program, expr, paren-expr, app-tail).
+ Compute FOLLOW sets for the same non-terminals. ✅
 
- Compute FOLLOW sets for the same non-terminals.
-
- Construct the LL(1) parse table M[A,a].
+ Construct the LL(1) parse table M[A,a]. 
 
  Check that each table cell contains one unique production (no conflicts).
 
  Show this table in your PDF.
 
-✅ A.2 Conflict Resolution
+A.2 Conflict Resolution
 
  Explain why the rule <expr> <expr>* doesn’t cause ambiguity.
 
@@ -24,7 +22,7 @@ Goal: Analyse the MiniLisp grammar and prove it’s LL(1).
 
  Explain what the parser does when the next token is +, ×, λ, etc.
 
-✅ A.3 Grammar Properties
+A.3 Grammar Properties
 
  Discuss why the grammar is unambiguous.
 
@@ -36,7 +34,7 @@ Goal: Analyse the MiniLisp grammar and prove it’s LL(1).
 
 Goal: Build a working LL(1) parser in Python (or your chosen language).
 
-✅ B.1 Lexer (15 pts)
+B.1 Lexer (15 pts)
 
  Implement a lexer that outputs tokens:
 NUMBER, IDENT, LPAREN, RPAREN, PLUS, TIMES, EQUAL, MINUS, QMARK, LAMBDA, DEF, EOF.
@@ -45,7 +43,7 @@ NUMBER, IDENT, LPAREN, RPAREN, PLUS, TIMES, EQUAL, MINUS, QMARK, LAMBDA, DEF, EO
 
  Return a list of token objects with type, lexeme, and position.
 
-✅ B.2 Parser (20 pts)
+B.2 Parser (20 pts)
 
  Hard-code your parse table (dict of (non-terminal, terminal) → production).
 
@@ -61,7 +59,7 @@ Match terminals; accept on $ + EOF.
 
  Detect and report “unexpected token” errors.
 
-✅ B.3 Parse Tree (10 pts)
+B.3 Parse Tree (10 pts)
 
  Build simple list-based trees such as ['PLUS', 2, 'x'].
 
@@ -74,7 +72,7 @@ PLUS, MULT, EQUAL, MINUS, IF, LAMBDA, DEF, CALL.
 
 Goal: Verify correctness and produce clean outputs.
 
-✅ C.1 Test Cases (10 pts)
+C.1 Test Cases (10 pts)
 
  Create test inputs for:
 
@@ -90,7 +88,7 @@ Functions: (λ x x), (≜ y 10 y), ((λ x (+ x 1)) 5)
 
  Generate matching JSON output files.
 
-✅ C.2 Error Handling (5 pts)
+C.2 Error Handling (5 pts)
 
  Handle missing ), unmatched ), and wrong arity ((+ 2 3 4)).
 

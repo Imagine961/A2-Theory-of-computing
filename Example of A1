@@ -1,0 +1,316 @@
+from enum import Enum, auto
+
+
+class NumberException(Exception):
+    pass
+
+
+class ExpressionException(Exception):
+    pass
+
+
+class TokenType(Enum):
+    Number = auto()
+    Plus = auto()
+    Minus = auto()
+    Times = auto()
+    Divide = auto()
+
+
+class Token:
+
+    def __init__(self, valueOrType):
+        if isinstance(valueOrType, float):
+            self.value = valueOrType
+            self.type = TokenType.Number
+        else:
+            self.value = -1.0
+            self.type = valueOrType
+
+    def isNumber(self):
+        return self.type == TokenType.Number
+
+    def getType(self):
+        return self.type
+
+    def getValue(self):
+        if self.isNumber():
+            return self.value
+        else:
+            return None
+
+    def typeOf(symbol):
+        types = {
+            '+': TokenType.Plus,
+            '-': TokenType.Minus,
+            '*': TokenType.Times,
+            '/': TokenType.Divide
+        }
+        return types.get(symbol, None)
+
+    def __str__(self):
+        strings = {
+            TokenType.Number: str(self.value),
+            TokenType.Plus: "+",
+            TokenType.Minus: "-",
+            TokenType.Times: "*",
+            TokenType.Divide: "/"
+        }
+        return strings.get(self.type, None)
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        if not isinstance(other, Token):
+            return False
+        if self.isNumber():
+            if other.isNumber():
+                return self.value == other.value
+            else:
+                return False
+        else:
+            if other.isNumber():
+                return False
+            else:
+                return self.type == other.type
+
+    def __ne__(self, other):
+        return not self == other
+
+
+class LexicalAnalyser:
+
+    @classmethod
+    def analyse(cls, input):
+        i = 0
+        n = len(input)
+        tokens = []
+        buffer = []
+        err = ''  # for error messages
+
+        # DFA states
+        s0 = 0
+        s1 = 1
+        s2 = 2
+        s5 = 5
+        s6 = 6
+        s7 = 7
+
+        expressionException = 8
+        numberException = 9
+
+        state = s0
+
+        def finish_number():
+            nonlocal state, err
+            num = ''.join(buffer)
+            if num == '':
+                state = numberException
+                err = "invalid number: empty lexeme"
+                return
+            if '.' in num:
+                parts = num.split('.', 1)
+                if len(parts) != 2:
+                    state = numberException
+                    err = f"invalid number {num}: multiple '.'"
+                    return
+                left, right = parts
+                if left != '0':
+                    state = numberException
+                    err = f"invalid decimal {num}: part before '.' must be 0"
+                    return
+                if right == '' or not right.isdigit():
+                    state = numberException
+                    err = f"invalid decimal {num}: digits required after '.'"
+                    return
+            else:
+                if len(num) > 1 and num[0] == '0':
+                    state = numberException
+                    err = f"invalid number {num}: leading zeros not allowed"
+                    return
+                if not num.isdigit():
+                    state = numberException
+                    err = f"invalid integer {num}"
+                    return
+            tokens.append(Token(float(num)))
+            buffer.clear()
+
+        while state not in (numberException, expressionException):
+
+            # ----- EOF acceptance -----
+            if i >= n:
+                if state in (s1, s7): 
+                    finish_number()
+                    if state == numberException:
+                        break
+                    return tokens
+                elif state == s2:
+                    state = numberException
+                    err = "Invalid number format"
+                else:
+                    state = expressionException
+                    err = "Invalid expression format"
+                break
+
+            char = input[i]
+            op = Token.typeOf(char)
+
+            # ------------------- S0 -------------------
+            if state == s0:
+                if char == '0':
+                    buffer.clear() 
+                    buffer.append('0')
+                    state = s1
+                    i += 1
+                elif char in '123456789':
+                    buffer.clear()
+                    buffer.append(char)
+                    state = s7
+                    i += 1
+                elif char == '.':
+                    state = numberException
+                    err = "Invalid number format"
+                elif char.isspace():
+                    i += 1 
+                elif op is not None:
+                    state = expressionException
+                    err = "Invalid expression format"
+                else:
+                    state = numberException
+                    err = f"Invalid character {char!r}"
+
+            # ------------------- S1 -------------------
+            elif state == s1:
+                if char.isdigit():
+                    state = numberException
+                    err = "Invalid number format"
+                elif char == '.':
+                    buffer.append('.')
+                    state = s2
+                    i += 1
+                elif char.isspace():
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    state = s5
+                    i += 1
+                elif op is not None:
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    tokens.append(Token(op))
+                    state = s6
+                    i += 1
+                else:
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    state = s5
+
+            # ------------------- S2 -------------------
+            elif state == s2:
+                if char.isdigit():
+                    buffer.append(char)
+                    state = s7
+                    i += 1
+                elif char.isspace():
+                    state = numberException
+                    err = "Invalid number format"
+                elif char == '.':
+                    state = numberException
+                    err = "Invalid number format"
+                elif op is not None:
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    tokens.append(Token(op))
+                    state = s6
+                    i += 1
+                else:
+                    state = numberException
+                    err = "Invalid number format"
+
+            # ------------------- S5 -------------------
+            elif state == s5:
+                if char.isdigit():
+                    state = expressionException
+                    err = "Invalid expression format"
+                elif char == '.':
+                    state = numberException
+                    err = "Invalid number format"
+                elif char.isspace():
+                    i += 1  # stay S5
+                elif op is not None:
+                    tokens.append(Token(op))
+                    state = s6
+                    i += 1
+                else:
+                    state = expressionException
+                    err = "Invalid expression format"
+
+            # ------------------- S6 -------------------
+            elif state == s6:
+                if char == '0':
+                    buffer.clear()
+                    buffer.append('0')
+                    state = s1
+                    i += 1
+                elif char in '123456789':
+                    buffer.clear()
+                    buffer.append(char)
+                    state = s7
+                    i += 1
+                elif char == '.':
+                    state = numberException
+                    err = "Invalid number format"
+                elif char.isspace():
+                    state = s0
+                    i += 1
+                elif op is not None:
+                    state = expressionException
+                    err = "Invalid expression format"
+                else:
+                    state = numberException
+                    err = f"Invalid character {char!r}"
+
+            # ------------------- S7 -------------------
+            elif state == s7:
+                if char.isdigit():
+                    buffer.append(char)
+                    i += 1
+                elif char == '.':
+                    state = numberException
+                    err = "Invalid number format"
+                elif char.isspace():
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    state = s5
+                    i += 1
+                elif op is not None:
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    tokens.append(Token(op))
+                    state = s6
+                    i += 1
+                else:
+                    finish_number()
+                    if state in (numberException, expressionException): break
+                    state = s5
+
+            
+            #------------------- sink States -------------------
+
+        if state == numberException:
+            raise NumberException(err or "Invalid number format")
+        
+        if state == expressionException:
+            raise ExpressionException(err or "Invalid expression format")
+
+        return tokens
+
+
+
+
+def main():
+    print(LexicalAnalyser.analyse("12 + 0.5 / 2 - 5*10"))
+    
+if __name__ == "__main__":
+    main()
+

@@ -8,10 +8,10 @@ A.1 LL(1) Verification
 
  Compute FOLLOW sets for the same non-terminals. ✅
 
- Construct the LL(1) parse table M[A,a]. 
+ Construct the LL(1) parse table M[A,a]. ✅
 
- Check that each table cell contains one unique production (no conflicts).
-
+ Check that each table cell contains one unique production (no conflicts).✅
+✅
  Show this table in your PDF.
 
 A.2 Conflict Resolution
@@ -93,3 +93,7 @@ C.2 Error Handling (5 pts)
  Handle missing ), unmatched ), and wrong arity ((+ 2 3 4)).
 
  Print clear messages with position info. 
+
+
+ Grading rubric:
+ 

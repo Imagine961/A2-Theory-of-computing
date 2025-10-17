@@ -37,4 +37,27 @@ uniCodeTable = {
     
 }
 
+class LexicalAnalyser:
 
+
+    @classmethod
+    def analyse(cls, input):
+        i = 0
+        n = len(input)
+        tokens = []
+        buffer = []
+
+
+
+
+#This is how to check things from the table apparently
+    
+def lookup_char(ch, table):
+    code = f"U+{ord(ch):04X}"
+    for key, value in table.items():
+        if isinstance(value, list):
+            if code in value:
+                return key
+        elif value == code:
+            return key
+    return None  # not found

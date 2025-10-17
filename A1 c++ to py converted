@@ -1,0 +1,100 @@
+from enum import Enum, auto
+
+
+class NumberException(Exception):
+    pass
+
+
+class ExpressionException(Exception):
+    pass
+
+
+class TokenType(Enum):
+    Number = auto()
+    Plus = auto()
+    Minus = auto()
+    Times = auto()
+    Divide = auto()
+
+
+class Token:
+    def __init__(self, value_or_type):
+        # This assumes Token can store either a number or a TokenType
+        if isinstance(value_or_type, (float, int)):
+            self.value = float(value_or_type)
+            self.type = TokenType.Number
+        elif isinstance(value_or_type, TokenType):
+            self.value = None
+            self.type = value_or_type
+        else:
+            raise ValueError("Invalid token type")
+
+    def __repr__(self):
+        if self.type == TokenType.Number:
+            return f"Token(Number, {self.value})"
+        else:
+            return f"Token({self.type.name})"
+
+
+def typeOf(char):
+    """Maps a character to its TokenType."""
+    if char == '+':
+        return TokenType.Plus
+    elif char == '-':
+        return TokenType.Minus
+    elif char == '*':
+        return TokenType.Times
+    elif char == '/':
+        return TokenType.Divide
+    else:
+        raise ExpressionException(f"Unknown operator: {char}")
+
+
+def analyse(input_str: str):
+    stack = list(input_str)
+    tokens = []
+    singletoken = ""
+
+    for k in range(len(stack)):
+        currentchar = stack[k]
+
+        plus = '+'
+        minus = '-'
+        multiply = '*'
+        divide = '/'
+
+        operatersymbol = currentchar in (plus, minus, multiply, divide)
+        number = currentchar in '123456789'
+        zero = currentchar == '0'
+
+        # Operator logic
+        if operatersymbol and not number:
+            if singletoken:
+                tokens.append(Token(float(singletoken)))
+                singletoken = ""
+
+            tokens.append(Token(typeOf(currentchar)))
+
+        # Decimal logic
+        elif currentchar == '.':
+            singletoken += currentchar
+
+            if 0 < k < len(stack) - 1:
+                nextchar = stack[k + 1]
+                prevchar = stack[k - 1]
+                nextnumber = nextchar in '123456789'
+
+                if not (nextchar == '0' or nextnumber):
+                    raise NumberException("Invalid number after decimal point")
+                elif prevchar != '0':
+                    raise NumberException("Invalid number before decimal point")
+
+        # Number or other valid character logic
+        else:
+            singletoken += currentchar
+
+    # Push last token
+    if singletoken:
+        tokens.append(Token(float(singletoken)))
+
+    return tokens

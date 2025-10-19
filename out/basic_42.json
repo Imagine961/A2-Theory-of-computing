@@ -1,0 +1,5 @@
+{
+  "input": "42",
+  "ok": false,
+  "message": "Illegal character '4' at index 0"
+}

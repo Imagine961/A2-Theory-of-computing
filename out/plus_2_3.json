@@ -1,0 +1,5 @@
+{
+  "input": "(+ 2 3)",
+  "ok": false,
+  "message": "Illegal character '2' at index 3"
+}

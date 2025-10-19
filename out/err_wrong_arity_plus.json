@@ -1,0 +1,6 @@
+{
+  "input": "(+ 2 3 4)",
+  "ok": true,
+  "error_expected": true,
+  "message": "Illegal character '2' at index 3"
+}

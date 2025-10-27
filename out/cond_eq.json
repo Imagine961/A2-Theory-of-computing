@@ -1,5 +1,0 @@
-{
-  "input": "(? (= x 0) 1 0)",
-  "ok": false,
-  "message": "Illegal character '0' at index 8"
-}

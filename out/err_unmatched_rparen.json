@@ -1,6 +1,0 @@
-{
-  "input": ")",
-  "ok": true,
-  "error_expected": true,
-  "message": "Syntax error: while expanding PROGRAM, got RPAREN; expected one of {IDENTIFIER, LPAREN, NUMBER}"
-}

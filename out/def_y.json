@@ -1,5 +1,0 @@
-{
-  "input": "(≜ y 10 y)",
-  "ok": false,
-  "message": "Illegal character '≜' at index 1"
-}

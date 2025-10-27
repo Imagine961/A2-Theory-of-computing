@@ -1,5 +1,0 @@
-{
-  "input": "(× x 5)",
-  "ok": false,
-  "message": "Illegal character '5' at index 5"
-}

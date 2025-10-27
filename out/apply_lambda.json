@@ -1,5 +1,0 @@
-{
-  "input": "((λ x (+ x 1)) 5)",
-  "ok": false,
-  "message": "Illegal character '1' at index 11"
-}

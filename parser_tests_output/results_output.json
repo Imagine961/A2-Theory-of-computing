@@ -1,20 +1,14 @@
 [
   {
-    "test": "basic_42",
     "input": "42",
-    "behave as expected": true,
     "tree": 42
   },
   {
-    "test": "basic_x",
     "input": "x",
-    "behave as expected": true,
     "tree": "x"
   },
   {
-    "test": "plus_2_3",
     "input": "(+ 2 3)",
-    "behave as expected": true,
     "tree": [
       "PLUS",
       2,
@@ -22,9 +16,7 @@
     ]
   },
   {
-    "test": "mult_x_5",
     "input": "(× x 5)",
-    "behave as expected": true,
     "tree": [
       "MULT",
       "x",
@@ -32,9 +24,7 @@
     ]
   },
   {
-    "test": "nested_plus_mult",
     "input": "(+ (× 2 3) 4)",
-    "behave as expected": true,
     "tree": [
       "PLUS",
       [
@@ -46,9 +36,7 @@
     ]
   },
   {
-    "test": "cond_eq",
     "input": "(? (= x 0) 1 0)",
-    "behave as expected": true,
     "tree": [
       "COND",
       [
@@ -61,9 +49,7 @@
     ]
   },
   {
-    "test": "lambda_id",
     "input": "(λ x x)",
-    "behave as expected": true,
     "tree": [
       "LAMBDA",
       "x",
@@ -71,9 +57,7 @@
     ]
   },
   {
-    "test": "def_y",
     "input": "(≜ y 10 y)",
-    "behave as expected": true,
     "tree": [
       "DEF",
       "y",
@@ -82,9 +66,7 @@
     ]
   },
   {
-    "test": "apply_lambda",
     "input": "((λ x (+ x 1)) 5)",
-    "behave as expected": true,
     "tree": [
       "APPLY",
       [
@@ -100,14 +82,20 @@
     ]
   },
   {
-    "test": "grouping",
     "input": "(x)",
-    "behave as expected": true,
     "tree": "x"
   },
   {
-    "test": "application",
     "input": "(x 1 2)",
+    "tree": [
+      "APPLY",
+      "x",
+      1,
+      2
+    ]
+  },
+  {
+    "input": "(+ 2",
     "behave as expected": true,
     "tree": [
       "APPLY",
@@ -117,21 +105,23 @@
     ]
   },
   {
-    "test": "err_missing_rparen",
-    "input": "(+ 2",
-    "behave as expected": true,
-    "error": "Unexpected token EOF at index 3. Expected one of: ['IDENTIFIER', 'LPAREN', 'NUMBER']"
-  },
-  {
-    "test": "err_unmatched_rparen",
     "input": ")",
     "behave as expected": true,
-    "error": "Unexpected token RPAREN at index 0. Expected one of: ['IDENTIFIER', 'LPAREN', 'NUMBER']"
+    "tree": [
+      "APPLY",
+      "x",
+      1,
+      2
+    ]
   },
   {
-    "test": "err_wrong_arity_plus",
     "input": "(+ 2 3 4)",
     "behave as expected": true,
-    "error": "Unexpected token NUMBER at index 4. Expected RPAREN"
+    "tree": [
+      "APPLY",
+      "x",
+      1,
+      2
+    ]
   }
 ]

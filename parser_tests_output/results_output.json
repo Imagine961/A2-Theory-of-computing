@@ -1,127 +1,39 @@
-[
-  {
-    "input": "42",
-    "tree": 42
-  },
-  {
-    "input": "x",
-    "tree": "x"
-  },
-  {
-    "input": "(+ 2 3)",
-    "tree": [
-      "PLUS",
-      2,
-      3
-    ]
-  },
-  {
-    "input": "(× x 5)",
-    "tree": [
-      "MULT",
-      "x",
-      5
-    ]
-  },
-  {
-    "input": "(+ (× 2 3) 4)",
-    "tree": [
-      "PLUS",
-      [
-        "MULT",
-        2,
-        3
-      ],
-      4
-    ]
-  },
-  {
-    "input": "(? (= x 0) 1 0)",
-    "tree": [
-      "COND",
-      [
-        "EQUALS",
-        "x",
-        0
-      ],
-      1,
-      0
-    ]
-  },
-  {
-    "input": "(λ x x)",
-    "tree": [
-      "LAMBDA",
-      "x",
-      "x"
-    ]
-  },
-  {
-    "input": "(≜ y 10 y)",
-    "tree": [
-      "DEF",
-      "y",
-      10,
-      "y"
-    ]
-  },
-  {
-    "input": "((λ x (+ x 1)) 5)",
-    "tree": [
-      "APPLY",
-      [
-        "LAMBDA",
-        "x",
-        [
-          "PLUS",
-          "x",
-          1
-        ]
-      ],
-      5
-    ]
-  },
-  {
-    "input": "(x)",
-    "tree": "x"
-  },
-  {
-    "input": "(x 1 2)",
-    "tree": [
-      "APPLY",
-      "x",
-      1,
-      2
-    ]
-  },
-  {
-    "input": "(+ 2",
-    "behave as expected": true,
-    "tree": [
-      "APPLY",
-      "x",
-      1,
-      2
-    ]
-  },
-  {
-    "input": ")",
-    "behave as expected": true,
-    "tree": [
-      "APPLY",
-      "x",
-      1,
-      2
-    ]
-  },
-  {
-    "input": "(+ 2 3 4)",
-    "behave as expected": true,
-    "tree": [
-      "APPLY",
-      "x",
-      1,
-      2
-    ]
-  }
-]
+Input: 42
+Output: 42
+
+Input: x
+Output: x
+
+Input: (+ 2 3)
+Output: ["PLUS",2,3]
+
+Input: (× x 5)
+Output: ["MULT","x",5]
+
+Input: (+ (× 2 3) 4)
+Output: ["PLUS",["MULT",2,3],4]
+
+Input: (? (= x 0) 1 0)
+Output: ["COND",["EQUALS","x",0],1,0]
+
+Input: (λ x x)
+Output: ["LAMBDA","x","x"]
+
+Input: (≜ y 10 y)
+Output: ["LET","y",10,"y"]
+
+Input: (x)
+Output: ERROR: Unexpected token IDENTIFIER at index 1. Expected one of: ['CONDITIONAL', 'EQUALS', 'LAMBDA', 'LET', 'MINUS', 'MULT', 'PLUS']
+
+Input: (x 1 2)
+Output: ERROR: Unexpected token IDENTIFIER at index 1. Expected one of: ['CONDITIONAL', 'EQUALS', 'LAMBDA', 'LET', 'MINUS', 'MULT', 'PLUS']
+
+Input: (+ 2
+Output: ERROR: Unexpected token EOF at index 3. Expected one of: ['IDENTIFIER', 'LPAREN', 'NUMBER']
+
+Input: )
+Output: ERROR: Unexpected token RPAREN at index 0. Expected one of: ['IDENTIFIER', 'LPAREN', 'NUMBER']
+
+Input: (+ 2 3 4)
+Output: ERROR: Unexpected token NUMBER at index 4. Expected RPAREN
+

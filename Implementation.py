@@ -23,13 +23,13 @@ uniCodeTable = {
     "EQUALS": "U+003D",   # =
 
     # Conditional operator
-    "QUESTION": "U+003F", # ?
+    "CONDITIONAL": "U+003F", # ?
 
     # Lambda (function abstraction)
     "LAMBDA": "U+03BB",   # λ (Greek small letter lambda)
 
     # Definition / binding
-    "DEF": "U+225C",      # ≜ (colon equals)
+    "LET": "U+225C",      # ≜ (colon equals)
 
     # Whitespace characters
     "SPACE": "U+0020",
@@ -67,10 +67,10 @@ class LexicalAnalyser:
             return "LAMBDA"
         elif tokenType == "NUM":
             return "NUMBER"
-        elif tokenType == "QUESTION":
-            return "QUESTION"
-        elif tokenType == "DEF":
-            return "DEF"
+        elif tokenType == "CONDITIONAL":
+            return "CONDITIONAL"
+        elif tokenType == "LET":
+            return "LET"
         else:
             return None
         
@@ -153,7 +153,7 @@ class LexicalAnalyser:
                 addToken("IDENTIFIER", identifier)
                 continue
 
-            if tokenType in ("LPAREN", "RPAREN", "PLUS", "MINUS", "MULT", "EQUALS", "LAMBDA", "QUESTION", "DEF"):
+            if tokenType in ("LPAREN", "RPAREN", "PLUS", "MINUS", "MULT", "EQUALS", "LAMBDA", "CONDITIONAL", "LET"):
                 addToken(tokenType, ch)
                 i += 1
                 continue
@@ -196,13 +196,10 @@ def lamda(child):
     ident, body = child
     return ["LAMBDA", ident, body]
 
-def definition(child):
+def let(child):
     ident, e1, e2 = child
-    return ["DEF", ident, e1, e2]
+    return ["LET", ident, e1, e2]
 
-def application(child):
-    head, args = child
-    return head if len(args) == 0 else ["APPLY", head] + args
 
 def args_cond(child):
     head, tail = child
@@ -217,24 +214,19 @@ def add(nt, lookahead, rhs, builder):
     for la in lookahead:
         PT[(nt, la)] = (rhs, builder)
 
-add(NT_PROGRAM, ["NUMBER", "IDENTIFIER", "LPAREN"], [NT_EXPRESSION], skip)
+add(NT_PROGRAM, ["NUMBER","IDENTIFIER","LPAREN"], [NT_EXPRESSION], skip)
 
 add(NT_EXPRESSION, ["NUMBER"], ["NUMBER"], num)
 add(NT_EXPRESSION, ["IDENTIFIER"], ["IDENTIFIER"], ident)
 add(NT_EXPRESSION, ["LPAREN"], ["LPAREN", NT_PAREN, "RPAREN"], skip)
 
-add(NT_PAREN, ["LAMBDA"], ["LAMBDA", "IDENTIFIER", NT_EXPRESSION], lamda)
-add(NT_PAREN, ["DEF"], ["DEF", "IDENTIFIER", NT_EXPRESSION, NT_EXPRESSION], definition)
-add(NT_PAREN, ["PLUS"], ["PLUS", NT_EXPRESSION, NT_EXPRESSION], op2("PLUS"))
-add(NT_PAREN, ["MINUS"], ["MINUS", NT_EXPRESSION, NT_EXPRESSION], op2("MINUS"))
-add(NT_PAREN, ["MULT"], ["MULT", NT_EXPRESSION, NT_EXPRESSION], op2("MULT"))
-add(NT_PAREN, ["EQUALS"], ["EQUALS", NT_EXPRESSION, NT_EXPRESSION], op2("EQUALS"))
-add(NT_PAREN, ["QUESTION"], ["QUESTION", NT_EXPRESSION, NT_EXPRESSION, NT_EXPRESSION], conditional)
-
-add(NT_PAREN, ["NUMBER", "IDENTIFIER", "LPAREN"], [NT_EXPRESSION, NT_ARGTAIL], application)
-
-add(NT_ARGTAIL, ["NUMBER", "IDENTIFIER", "LPAREN"], [NT_EXPRESSION, NT_ARGTAIL], args_cond)
-add(NT_ARGTAIL, ["RPAREN"], [], args_empty)
+add(NT_PAREN, ["LAMBDA"], ["LAMBDA","IDENTIFIER", NT_EXPRESSION], lamda)
+add(NT_PAREN, ["LET"],    ["LET","IDENTIFIER", NT_EXPRESSION, NT_EXPRESSION], let)
+add(NT_PAREN, ["PLUS"],   ["PLUS",  NT_EXPRESSION, NT_EXPRESSION], op2("PLUS"))
+add(NT_PAREN, ["MINUS"],  ["MINUS", NT_EXPRESSION, NT_EXPRESSION], op2("MINUS"))
+add(NT_PAREN, ["MULT"],   ["MULT",  NT_EXPRESSION, NT_EXPRESSION], op2("MULT"))
+add(NT_PAREN, ["EQUALS"], ["EQUALS",NT_EXPRESSION, NT_EXPRESSION], op2("EQUALS"))
+add(NT_PAREN, ["CONDITIONAL"], ["CONDITIONAL", NT_EXPRESSION, NT_EXPRESSION, NT_EXPRESSION], conditional)
 
 class parseError(Exception):
     pass
@@ -303,6 +295,10 @@ def parseInput(source: str):
     tokens = LexicalAnalyser.analyse(source)
     return LL1Parser.parse(tokens)
 
+def compactJSON(obj):
+    return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
+    
+
 TESTS = [
     # Basic expressions
     ("basic_42", "42", False),
@@ -312,10 +308,9 @@ TESTS = [
     # Nested
     ("nested_plus_mult", "(+ (× 2 3) 4)", False),
     ("cond_eq", "(? (= x 0) 1 0)", False),
-    # Functions / defs / application
+    # Functions / lets / application
     ("lambda_id", "(λ x x)", False),
-    ("def_y", "(≜ y 10 y)", False),
-    ("apply_lambda", "((λ x (+ x 1)) 5)", False),
+    ("let", "(≜ y 10 y)", False),
     ("grouping", "(x)", False),
     ("application", "(x 1 2)", False),
     # Error handling
@@ -334,17 +329,17 @@ def main():
 
     for name, source, shouldFail in TESTS:
         try:
-            tree = parseInput(source)
+            output = parseInput(source)
             if shouldFail:
                 results.append({
                         "input": source,
-                        "tree": tree
+                        "output": output
                     })
                 failed += 1
             else:
                 results.append({
                     "input": source,
-                    "tree": tree
+                    "output": output
                     })
                 passed += 1
         except Exception as e:
@@ -353,19 +348,33 @@ def main():
                 results.append({
                     "input": source,
                     "behave as expected": True,
-                    "tree": tree
+                    "output": output
                     })
                 passed += 1
             else:
                 results.append({
                     "input": source,
                     "behave as expected": False,
-                    "tree": tree
+                    "output": output
                     })
                 failed += 1
 
     outputPath = outputDir / "results_output.json"
-    outputPath.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    with outputPath.open("w", encoding="utf-8") as f:
+        for name, source, shouldFail in TESTS:
+            try:
+                tree = parseInput(source)
+                output = tree
+            except Exception as e:
+                output = f"ERROR: {str(e)}"
+
+            # If the output is structured (list, number, etc.), convert to compact JSON
+            if not isinstance(output, str):
+                output = json.dumps(output, ensure_ascii=False, separators=(',', ':'))
+
+            f.write(f"Input: {source}\n")
+            f.write(f"Output: {output}\n\n")
+
 
     print(f"Tests passed: {passed}, Tests failed: {failed}")
 
@@ -379,13 +388,12 @@ if __name__ == "__main__":
         except Exception as e:
             print(sample, "--> Error:", str(e))
 
-
-'''
-final to-do list:
-1. fix up output to json file, should only contain input and tree
-2. add more test cases to TESTS list
-3. double check all code remove any extras related to outputs that need to be removed (part of to-do 1)
-'''
-
     
-
+'''
+to-do list:
+1. remove underscore from identfiers (to match spec --> [a-zA-Z][a-zA-Z0-9]*)
+2. simplify number scanning to only allow integers ([0-9]+)
+3. re-add application rule in NT_PAREN for (expr expr* cases)
+4. reenable NT_ARGRTAIL rules to collect multiple arguments
+5. fix first test loops exception so output is not used before assignment
+'''

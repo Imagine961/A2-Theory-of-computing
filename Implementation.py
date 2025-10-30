@@ -396,4 +396,5 @@ to-do list:
 3. re-add application rule in NT_PAREN for (expr expr* cases)
 4. reenable NT_ARGRTAIL rules to collect multiple arguments
 5. fix first test loops exception so output is not used before assignment
+6. convert to laTeX format along with PDF for submission
 '''

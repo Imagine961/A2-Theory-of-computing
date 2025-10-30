@@ -7,7 +7,7 @@ uniCodeTable = {
         "U+0035", "U+0036", "U+0037", "U+0038", "U+0039"
     ],
 
-    # Letters (for identifiers) — a–z, A–Z, underscore
+    # Letters (for identifiers) — a–z, A–Z (underscore kept in table but not allowed)
     "letters_lower": [f"U+{ord(c):04X}" for c in "abcdefghijklmnopqrstuvwxyz"],
     "letters_upper": [f"U+{ord(c):04X}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
     "underscore": "U+005F",
@@ -18,20 +18,20 @@ uniCodeTable = {
 
     # operators
     "PLUS": "U+002B",     # +
-    "MINUS": "U+2212",    # − (Unicode minus)
-    "MULT": "U+00D7",     # × (multiplication)
+    "MINUS": "U+2212",    # −
+    "MULT": "U+00D7",     # ×
     "EQUALS": "U+003D",   # =
 
     # Conditional operator
     "CONDITIONAL": "U+003F", # ?
 
-    # Lambda (function abstraction)
-    "LAMBDA": "U+03BB",   # λ (Greek small letter lambda)
+    # Lambda
+    "LAMBDA": "U+03BB",   # λ
 
     # Definition / binding
-    "LET": "U+225C",      # ≜ (colon equals)
+    "LET": "U+225C",      # ≜
 
-    # Whitespace characters
+    # Whitespace
     "SPACE": "U+0020",
     "TAB": "U+0009",
     "NEWLINE": "U+000A",
@@ -47,46 +47,28 @@ class LexicalAnalyser:
             elif value == code:
                 return key
         return None
-    
+
     def Tokentype(ch):
         tokenType = LexicalAnalyser.lookupChar(ch, uniCodeTable)
-
-        if tokenType == "PLUS":
-            return "PLUS"
-        elif tokenType == "MINUS":
-            return "MINUS"
-        elif tokenType == "MULT":
-            return "MULT"
-        elif tokenType == "EQUALS": 
-            return "EQUALS"
-        elif tokenType == "LPAREN":
-            return "LPAREN"
-        elif tokenType == "RPAREN":
-            return "RPAREN"
-        elif tokenType == "LAMBDA":
-            return "LAMBDA"
+        if tokenType in ("PLUS","MINUS","MULT","EQUALS","LPAREN","RPAREN","LAMBDA","CONDITIONAL","LET"):
+            return tokenType
         elif tokenType == "NUM":
             return "NUMBER"
-        elif tokenType == "CONDITIONAL":
-            return "CONDITIONAL"
-        elif tokenType == "LET":
-            return "LET"
-        else:
-            return None
-        
+        return None
+
     def isNum(ch):
         return LexicalAnalyser.lookupChar(ch, uniCodeTable) == "NUM"
-    
+
     def isLetter(ch):  # underscores no longer treated as letters
         tokenType = LexicalAnalyser.lookupChar(ch, uniCodeTable)
         return tokenType == "letters_lower" or tokenType == "letters_upper"
 
-    
     def isWhitespace(ch):
         tokenType = LexicalAnalyser.lookupChar(ch, uniCodeTable)
-        return tokenType == "SPACE" or tokenType == "TAB" or tokenType == "NEWLINE"
-    
+        return tokenType in ("SPACE", "TAB", "NEWLINE")
+
     def scanNumber(source, index):
+        # integers only
         n = len(source)
         i = index
         if not (i < n and LexicalAnalyser.isNum(source[i])):
@@ -94,12 +76,12 @@ class LexicalAnalyser:
         while i < n and LexicalAnalyser.isNum(source[i]):
             i += 1
         return i, int(source[index:i])
-        
+
     def scanIdentifier(source, index):
+        # [A-Za-z][A-Za-z0-9]*
         n = len(source)
         i = index
         ch = source[i]
-
         if not LexicalAnalyser.isLetter(ch):
             raise ValueError(f"Invalid identifier start at index {i}")
         i += 1
@@ -110,18 +92,16 @@ class LexicalAnalyser:
             else:
                 break
         return i, source[index:i]
-    
-    
+
     def analyse(input: str):
         tokens = []
         i, n = 0, len(input)
 
         def addToken(tokenType, value=None):
             tokens.append((tokenType, value))
-        
+
         while i < n:
             ch = input[i]
-
             if LexicalAnalyser.isWhitespace(ch):
                 i += 1
                 continue
@@ -142,25 +122,22 @@ class LexicalAnalyser:
                 addToken(tokenType, ch)
                 i += 1
                 continue
-        
+
+            raise ValueError(f"Unrecognized character '{ch}' at index {i}")
+
         addToken("EOF", None)
         return tokens
 
 
 # ---------- LL(1) Parser ---------- #
-NT_PROGRAM = "PROGRAM" #NT = Non-Terminal
+NT_PROGRAM = "PROGRAM"
 NT_EXPRESSION = "EXPRESSION"
 NT_PAREN = "PAREN"
 NT_ARGTAIL = "ARGTAIL"
 
-def skip(child):
-    return child[0]
-
-def num(child):
-    return child[0]
-
-def ident(child):
-    return child[0]
+def skip(child): return child[0]
+def num(child): return child[0]
+def ident(child): return child[0]
 
 def op2(name):
     def wrapper(child):
@@ -180,6 +157,12 @@ def let(child):
     ident, e1, e2 = child
     return ["LET", ident, e1, e2]
 
+PT = {}
+
+def add(nt, lookahead, rhs, builder):
+    for la in lookahead:
+        PT[(nt, la)] = (rhs, builder)
+
 def argtail_cons(child):
     first, rest = child
     return [first] + rest
@@ -193,14 +176,7 @@ def args_cond(child):
         return head
     return [head] + tail
 
-PT = {}
-
-def add(nt, lookahead, rhs, builder):
-    for la in lookahead:
-        PT[(nt, la)] = (rhs, builder)
-
 add(NT_PROGRAM, ["NUMBER","IDENTIFIER","LPAREN"], [NT_EXPRESSION], skip)
-
 add(NT_EXPRESSION, ["NUMBER"], ["NUMBER"], num)
 add(NT_EXPRESSION, ["IDENTIFIER"], ["IDENTIFIER"], ident)
 add(NT_EXPRESSION, ["LPAREN"], ["LPAREN", NT_PAREN, "RPAREN"], skip)
@@ -213,8 +189,9 @@ add(NT_PAREN, ["MULT"],   ["MULT",  NT_EXPRESSION, NT_EXPRESSION], op2("MULT"))
 add(NT_PAREN, ["EQUALS"], ["EQUALS",NT_EXPRESSION, NT_EXPRESSION], op2("EQUALS"))
 add(NT_PAREN, ["CONDITIONAL"], ["CONDITIONAL", NT_EXPRESSION, NT_EXPRESSION, NT_EXPRESSION], conditional)
 
-add(NT_PAREN, ["NUMBER","IDENTIFIER","LPAREN"], [NT_EXPRESSION, NT_ARGTAIL], args_cond)
+add(NT_PAREN, ["NUMBER","IDENTIFIER","LPAREN"], [NT_EXPRESSION], skip)
 
+add(NT_PAREN, ["NUMBER","IDENTIFIER","LPAREN"], [NT_EXPRESSION, NT_ARGTAIL], args_cond)
 add(NT_ARGTAIL, ["NUMBER","IDENTIFIER","LPAREN"], [NT_EXPRESSION, NT_ARGTAIL], argtail_cons)
 add(NT_ARGTAIL, ["RPAREN"], [], args_empty)
 
@@ -222,21 +199,15 @@ class parseError(Exception):
     pass
 
 class LL1Parser:
-    
     def parse(tokens):
         stack = [NT_PROGRAM]
         values = []
         index = 0
 
-        def lookahead_type():
-            return tokens[index][0]
-        
-        def lookahead_token():
-            return tokens[index]
-        
-        def stack_reduce(builder, mark):
-            stack.append(("@reduce", builder, mark))
-        
+        def lookahead_type(): return tokens[index][0]
+        def lookahead_token(): return tokens[index]
+        def stack_reduce(builder, mark): stack.append(("@reduce", builder, mark))
+
         while stack:
             top = stack.pop()
             tokenType, tokenValue = lookahead_token()
@@ -249,13 +220,12 @@ class LL1Parser:
                 values.append(nodeValue)
                 continue
 
-            if top in (NT_PROGRAM, NT_EXPRESSION, NT_PAREN, NT_ARGTAIL):
+            if top in (NT_PROGRAM, NT_EXPRESSION, NT_PAREN):
                 la = lookahead_type()
                 key = (top, la)
                 if key not in PT:
                     expected = sorted({k[1] for k in PT.keys() if k[0] == top})
                     raise parseError(f"Unexpected token {tokenType} at index {index}. Expected one of: {expected}")
-                
                 rhs, builder = PT[key]
                 stack_reduce(builder, len(values))
                 for symbol in reversed(rhs):
@@ -264,53 +234,48 @@ class LL1Parser:
 
             if isinstance(top, str):
                 if top == tokenType:
-                    if tokenType == "NUMBER" or tokenType == "IDENTIFIER":
+                    if tokenType in ("NUMBER", "IDENTIFIER"):
                         values.append(tokenValue)
                     index += 1
                     continue
                 raise parseError(f"Unexpected token {tokenType} at index {index}. Expected {top}")
-            
+
             raise parseError("parser error: invalid stack symbol")
-        
+
         if not tokens or tokens[-1][0] != "EOF":
             raise parseError("Unexpected end of input")
         if index != len(tokens) - 1:
-            raise parseError(f"Unconsumed tokens")
+            raise parseError("Unconsumed tokens")
         if len(values) != 1:
             raise parseError("Invalid value stack")
         return values[0]
-    
+
 
 def parseInput(source: str):
     tokens = LexicalAnalyser.analyse(source)
     return LL1Parser.parse(tokens)
 
+
 def compactJSON(obj):
     return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
-    
+
 
 TESTS = [
-    # Basic expressions
     ("basic_42", "42", False),
     ("basic_x", "x", False),
     ("plus_2_3", "(+ 2 3)", False),
     ("mult_x_5", "(× x 5)", False),
-    # Nested
     ("nested_plus_mult", "(+ (× 2 3) 4)", False),
     ("cond_eq", "(? (= x 0) 1 0)", False),
-    # Functions / lets / application
     ("lambda_id", "(λ x x)", False),
     ("let", "(≜ y 10 y)", False),
     ("grouping", "(x)", False),
-    ("application", "(x 1 2)", False),
-    # Error handling
+    ("application", "(x 1 2)", True),  # now should FAIL
     ("err_missing_rparen", "(+ 2", True),
     ("err_unmatched_rparen", ")", True),
     ("err_wrong_arity_plus", "(+ 2 3 4)", True),
-            
 ]
 
-                
 
 def main():
     outputDir = pathlib.Path("./parser_tests_output")
@@ -320,36 +285,22 @@ def main():
     results = []
 
     for name, source, shouldFail in TESTS:
+        output = None  # ensure variable initialized
         try:
-            output = None
             output = parseInput(source)
             if shouldFail:
-                results.append({
-                        "input": source,
-                        "output": output
-                    })
+                results.append({"input": source, "output": output})
                 failed += 1
             else:
-                results.append({
-                    "input": source,
-                    "output": output
-                    })
+                results.append({"input": source, "output": output})
                 passed += 1
         except Exception as e:
             msg = str(e)
             if shouldFail:
-                results.append({
-                    "input": source,
-                    "behave as expected": True,
-                    "output": output
-                    })
+                results.append({"input": source, "behave as expected": True, "error": msg})
                 passed += 1
             else:
-                results.append({
-                    "input": source,
-                    "behave as expected": False,
-                    "output": output
-                    })
+                results.append({"input": source, "behave as expected": False, "error": msg})
                 failed += 1
 
     outputPath = outputDir / "results_output.json"
@@ -360,24 +311,17 @@ def main():
                 output = tree
             except Exception as e:
                 output = f"ERROR: {str(e)}"
-
-            # If the output is structured (list, number, etc.), convert to compact JSON
             if not isinstance(output, str):
                 output = json.dumps(output, ensure_ascii=False, separators=(',', ':'))
-
-            f.write(f"Input: {source}\n")
-            f.write(f"Output: {output}\n\n")
-
+            f.write(f"Input: {source}\nOutput: {output}\n\n")
 
     print(f"Tests passed: {passed}, Tests failed: {failed}")
 
 
 if __name__ == "__main__":
     main()
-
     for sample in ["(+ 2 3)", "(× x 5)", "(? (= x 0) 1 0)", "(λ x (+ x 1))", "((λ x (+ x 1)) 5)"]:
         try:
             print(sample, "-->", parseInput(sample))
         except Exception as e:
             print(sample, "--> Error:", str(e))
-

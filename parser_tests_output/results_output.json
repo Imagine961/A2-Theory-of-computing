@@ -23,10 +23,10 @@ Input: (≜ y 10 y)
 Output: ["LET","y",10,"y"]
 
 Input: (x)
-Output: ERROR: Unexpected token IDENTIFIER at index 1. Expected one of: ['CONDITIONAL', 'EQUALS', 'LAMBDA', 'LET', 'MINUS', 'MULT', 'PLUS']
+Output: x
 
 Input: (x 1 2)
-Output: ERROR: Unexpected token IDENTIFIER at index 1. Expected one of: ['CONDITIONAL', 'EQUALS', 'LAMBDA', 'LET', 'MINUS', 'MULT', 'PLUS']
+Output: ["x",1,2]
 
 Input: (+ 2
 Output: ERROR: Unexpected token EOF at index 3. Expected one of: ['IDENTIFIER', 'LPAREN', 'NUMBER']
